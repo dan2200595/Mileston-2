@@ -1,0 +1,207 @@
+#include<stdio.h>
+#include <stdlib.h>
+
+// define Note data structure 
+// include day, month, year
+// and char array of note
+struct Reminder {
+    int day;
+    int month;
+    char description[512];
+};
+
+
+// define global array
+// days in each month of a year
+int days_in_month[] = { 0,31,28,31,30,31,30,31,31,30,31,30,31 };
+
+// define name of the months array
+char* months[] = { " ","January","February","March","April",
+                "May","June","July","August","September",
+                "October","November","December" };
+
+
+// flush function is used to 
+// remove new line character at the end of line
+void flush() {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
+}
+
+// function for add a new note
+// prompt date and note from user
+// write it into a file
+void add_reminder() {
+    // define variables
+    struct Reminder reminder;
+    FILE* fp;
+    // open file in read mode
+    fp = fopen("reminder.bin", "r");
+    // check whether file is null
+    if (fp == NULL) {
+        // open file in writing mode
+        fp = fopen("reminder.bin", "w");
+    }
+    // close the file
+    fclose(fp);
+    // prompt date month and year from user
+    printf("Date and Month(ex: 31 03): ");
+    scanf_s("%d %d", &reminder.day, &reminder.month);
+    // remove new line character
+    flush();
+    // prompt reminder from user
+    printf("Reminder description (max: 512 chars): ");
+    fgets(reminder.description, 512, stdin);
+    // open file in append mode
+    fp = fopen("reminder.bin", "a+");
+    // if file cannot open exit from program
+    if (fp == NULL) {
+        printf("reminder.bin file is unable to open\n");
+        exit(1);
+    }
+    // write note into the file
+    fwrite(&reminder, sizeof(struct Reminder), 1, fp);
+    // display success message and close file
+    printf("Reminder sucessfully added to the calendar\n");
+    fclose(fp);
+}
+
+
+// function for display all remianders
+// read note.bin file
+// display standered output to user
+void display_Reminders() {
+    // define variables
+    FILE* fp;
+    struct Reminder reminder;
+    // open file as read mode
+    fp = fopen("reminder.bin", "r");
+    // if file cannot open exit from program
+    if (fp == NULL) {
+        printf("reminder.bin file is unable to open\n");
+        exit(1);
+    }
+    // read all remainders in note.bin file
+    while (fread(&reminder, sizeof(struct Reminder), 1, fp)) {
+        printf("Date: %d/%d/2021\n", reminder.day, reminder.month);
+        printf("Reminder: %s\n\n", reminder.description);
+    }
+    // close file
+    fclose(fp);
+}
+
+
+// function to display main menu 
+// display options available
+// get the option from user
+int menu_option(void) {
+    int option;
+    // display the options available
+    printf("\n---------Welcome to Calendar program main menu----------\n");
+    printf("\t1. Display calendar\n");
+    printf("\t2. Add a reminder\n");
+    printf("\t3. Display all reminders\n");
+    printf("\t4. Exit\n");
+    // prompt option from user
+    printf("Enter your option: ");
+    scanf_s("%d", &option);
+    printf("\n");
+    return option;
+}
+
+
+// function for determine daycode
+// get year as parameter
+// find daycode for given year
+int find_Day_Code(int year) {
+    // define variables
+    int daycode;
+    int d1, d2, d3;
+    // calculation for find daycode
+    d1 = (year - 1.) / 4.0;
+    d2 = (year - 1.) / 100.;
+    d3 = (year - 1.) / 400.;
+    // calculate the daycode
+    daycode = (year + d1 - d2 + d3) % 7;
+    return daycode;
+}
+
+
+// function for find leap year
+// if given year is leap year
+// return True else False
+int is_Leap_Year(int year) {
+    // check whether year is leap
+    if (year % 400 == 0 || (year % 100 != 0 && year % 4 == 0)) {
+        days_in_month[2] = 29;
+    }
+    else {
+        days_in_month[2] = 28;
+    }
+}
+
+
+// function for print calendar of a given year
+// get year and daycode as the parameters
+// display the calendar
+void print_calendar(int year, int daycode) {
+
+    // run until begin to end of the months of the year
+    for (int m = 1; m < 13; m++) {
+        // print month name and days
+        printf("\n\n\n------------%s-------------", months[m]);
+        printf("\n\nSun  Mon  Tue  Wed  Thu  Fri  Sat\n");
+        // set the position of the 1st date in a month
+        for (int day = 1; day <= 1 + daycode * 5; day++) {
+            printf(" ");
+        }
+        // Print all the dates for a month
+        for (int day = 0; day < days_in_month[m]; day++) {
+            printf("%2d", day + 1);
+            // Is day before Sat? Else start next line Sun.
+            if (((day + 1) + daycode) % 7 > 0)
+                printf("   ");
+            else
+                printf("\n ");
+        }
+        // Set the position to display for next month
+        daycode = (daycode + days_in_month[m]) % 7;
+    }
+}
+
+
+// main driver function
+int main(void) {
+    // define varibles
+    int year, daycode, option;
+    // run until user exit from the program
+    while (1) {
+        // get the user option
+        option = menu_option();
+        // if option is 1 display calendar
+        if (option == 1) {
+            printf("Please enter a year (ex: 2020): ");
+            scanf_s("%d", &year);
+            // find daycode for given year
+            daycode = find_Day_Code(year);
+            // check whether if it is a leap year
+            is_Leap_Year(year);
+            // display callender
+            print_calendar(year, daycode);
+            printf("\n");          
+        }// add a reminder
+        else if (option == 2) {
+            add_reminder();         
+        }// display all reminders
+        else if (option == 3) {
+            display_Reminders();           
+        }// exit from the program
+        else if (option == 4) {
+            printf("Thank you for using calendar program.\n");
+            break;
+        }// print error message
+        else {
+            printf("Please, enter the valid input!");
+        }
+    }
+}
